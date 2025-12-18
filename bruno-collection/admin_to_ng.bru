@@ -1,7 +1,7 @@
 meta {
-  name: ng_to_admin
+  name: admin_to_ng
   type: http
-  seq: 5
+  seq: 6
 }
 
 post {
@@ -11,14 +11,14 @@ post {
 }
 
 auth:basic {
-  username: ng
-  password: lol
+  username: admin
+  password: admin
 }
 
 body:json {
   {
-    "receiver": "admin",
-    "msg": "test"
+    "receiver": "ng",
+    "msg": "Merry Christmas"
   }
 }
 
