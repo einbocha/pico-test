@@ -1,3 +1,4 @@
 server_state.json
 server_config.json
 __pycache__
+server.log

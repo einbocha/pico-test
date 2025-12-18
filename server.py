@@ -2,6 +2,8 @@ from flask import Flask, abort, request
 from flask_httpauth import HTTPBasicAuth
 import json
 import os
+from logging.handlers import RotatingFileHandler
+import logging
 
 CONFIG = 'server_config.json'
 STATE = 'server_state.json'
@@ -53,6 +55,21 @@ def config_get_user(username=None):
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 
+log_fstring = '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+mbyte = 100 * (1024 * 1024)
+
+file_handler = RotatingFileHandler('server.log', maxBytes=mbyte)
+file_handler.setFormatter(logging.Formatter(log_fstring))
+
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.DEBUG)
+
+werkzeug_logger = logging.getLogger('werkzeug')
+werkzeug_logger.addHandler(file_handler)
+werkzeug_logger.setLevel(logging.DEBUG)
+
+app.logger.info("🚀 Server startet")
+
 if not os.path.exists(CONFIG):
     default_config = {
         'users': [
@@ -62,7 +79,7 @@ if not os.path.exists(CONFIG):
     write_config(default_config)
 
 if not config_get_user('admin'):
-    print('Admin user missing!')
+    app.logger.critical('Admin user missing!')
 
 if not os.path.exists(STATE):
     default_state = {}
