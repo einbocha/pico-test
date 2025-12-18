@@ -1,0 +1,28 @@
+meta {
+  name: ng_to_admin
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://127.0.0.1:8000/send_msg
+  body: json
+  auth: basic
+}
+
+auth:basic {
+  username: ng
+  password: lol
+}
+
+body:json {
+  {
+    "receiver": "admin",
+    "msg": "test"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

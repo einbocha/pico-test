@@ -1,24 +1,62 @@
-from machine import Pin, I2C
-from ssd1306 import SSD1306_I2C
+import network, uasyncio as asyncio, socket
 import time
 
-# I2C setup (default pins GP4=SDA, GP5=SCL for Pico I2C0)
-i2c = I2C(0, sda=Pin(4), scl=Pin(5), freq=400000)
+SSID = "einbocha's iPhone"
+PASSWORD = "bfowcueldicnejlvevxkg"
 
-# Scan and print I2C devices (should show 0x3C)
-print('I2C devices:', [hex(addr) for addr in i2c.scan()])
+# Wi-Fi connect
+wlan = network.WLAN(network.STA_IF)
+wlan.active(True)
 
-oled = SSD1306_I2C(128, 32, i2c)
+wlan.connect(SSID, PASSWORD)
 
-# Test display
-oled.fill(0)  # Clear screen
-oled.text('Test', 0, 0)
-oled.show()
-
-time.sleep(3)
-
-# Scroll demo
-while True:
-    oled.scroll(2, 0)  # Horizontal scroll
+print('Connecting to', SSID)
+while not wlan.isconnected():
     time.sleep(1)
-    oled.show()
+    print('.', end='')
+
+print("\nIP:", wlan.ifconfig()[0])
+
+html = """\
+HTTP/1.0 200 OK\r
+Content-Type: text/html\r
+\r
+<!DOCTYPE html>
+<html>
+<body>
+<h1>Pico Form</h1>
+<form method="POST" action="/">
+<label>LED:</label>
+<select name="led">
+<option value="on">On</option>
+<option value="off">Off</option>
+</select>
+<button type="submit">Send</button>
+</form>
+</body>
+</html>
+"""
+
+
+async def handle_client(reader, writer):
+    try:
+        request = await reader.read(1024)
+        req = request.decode()
+        req = req.split('\n')
+
+        for line in req:
+            print(line + '\n')
+        await writer.awrite(html)
+    finally:
+        await writer.aclose()
+
+async def main():
+    # Manual server loop instead of server.serve_forever()
+    server = await asyncio.start_server(handle_client, "0.0.0.0", 80)
+    print("Server running on port 80")
+    while True:
+        # On some builds simply keeping the event loop alive is enough;
+        # the server internally accepts connections.
+        await asyncio.sleep(1)
+
+asyncio.run(main())

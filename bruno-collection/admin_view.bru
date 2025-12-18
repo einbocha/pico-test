@@ -1,0 +1,21 @@
+meta {
+  name: admin_view
+  type: http
+  seq: 5
+}
+
+get {
+  url: http://127.0.0.1:8000/admin_view
+  body: none
+  auth: basic
+}
+
+auth:basic {
+  username: admin
+  password: admin
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
