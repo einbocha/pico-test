@@ -92,20 +92,30 @@ if not os.path.exists(STATE):
     write_state(default_state)
 
 
-def update_state(username, change):
+def update_state(username, rec, change):
     state = read_state()
 
-    state[username]['state'] = change
+    state[rec]['state'] = change
+
+    if username != rec:
+        state[rec]['requested'] = False
 
     write_state(state)
 
+    app.logger.info(f'{username}: "{change}" -> rec')
 
-def msg_to_state(username, msg):
+
+def msg_to_state(username, rec, msg):
     state = read_state()
 
-    state[username]['state'].append(msg)
+    state[rec]['state'].append(msg)
+
+    if username != rec:
+        state[rec]['requested'] = False
 
     write_state(state)
+
+    app.logger.info(f'{username}: "{msg}" -> rec')
 
 
 @auth.verify_password
@@ -126,7 +136,23 @@ def personal_state():
 
     state = read_state()
 
+    state[username]['requested'] = True
+
+    write_state(state)
+
     return state[username]
+
+
+@app.route('/admin_view')
+@auth.login_required
+def super_state():
+    username = auth.current_user()
+    if username != 'admin':
+        abort(401)
+
+    state = read_state()
+
+    return state
 
 
 @app.route('/send_msg', methods=['POST'])
@@ -144,7 +170,7 @@ def send_msg_to():
     if rec not in friends:
         abort(400)
 
-    msg_to_state(rec, msg)
+    msg_to_state(username, rec, msg)
 
     return ""
 
@@ -153,8 +179,6 @@ def send_msg_to():
 @auth.login_required
 def update_state_of():
     username = auth.current_user()
-    # if username != 'admin':
-    #     abort(401)
 
     friends = config_get_user(username)['friends']
 
@@ -166,21 +190,9 @@ def update_state_of():
     if rec not in friends:
         abort(400)
 
-    update_state(rec, state)
+    update_state(username, rec, state)
 
     return ""
-
-
-@app.route('/admin_view')
-@auth.login_required
-def super_state():
-    username = auth.current_user()
-    if username != 'admin':
-        abort(401)
-
-    state = read_state()
-
-    return state
 
 
 if __name__ == '__main__':
